@@ -93,10 +93,10 @@ pub mod opaque {
 }
 
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-	spec_name: create_runtime_str!("node-template"),
-	impl_name: create_runtime_str!("node-template"),
+	spec_name: create_runtime_str!("decentration-node-template"),
+	impl_name: create_runtime_str!("decentration-node-template"),
 	authoring_version: 1,
-	spec_version: 100,
+	spec_version: 101,
 	impl_version: 1,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -250,7 +250,8 @@ parameter_types! {
     pub const NickReservationFee: u128 = 100;
     pub const MinNickLength: usize = 8;
     // Maximum bounds on storage are important to secure your chain.
-    pub const MaxNickLength: usize = 32;
+	pub const MaxNickLength: usize = 32;
+	
 }
 
 	impl pallet_nicks::Trait for Runtime {
@@ -280,6 +281,9 @@ parameter_types! {
 
 parameter_types! {
 	pub const TransactionByteFee: Balance = 1;
+
+	pub MaximumSchedulerWeight: Weight = Perbill::from_percent(80) * MaximumBlockWeight::get();
+    pub const MaxScheduledPerBlock: u32 = 50;
 }
 
 impl pallet_transaction_payment::Trait for Runtime {
@@ -298,6 +302,18 @@ impl pallet_sudo::Trait for Runtime {
 /// Configure the template pallet in pallets/template.
 impl pallet_template::Trait for Runtime {
 	type Event = Event;
+}
+
+// Configure the runtime's implementation of the Scheduler pallet.
+impl pallet_scheduler::Trait for Runtime {
+    type Event = Event;
+    type Origin = Origin;
+    type PalletsOrigin = OriginCaller;
+    type Call = Call;
+    type MaximumWeight = MaximumSchedulerWeight;
+    type ScheduleOrigin = frame_system::EnsureRoot<AccountId>;
+    type MaxScheduledPerBlock = MaxScheduledPerBlock;
+    type WeightInfo = ();
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
@@ -320,8 +336,12 @@ construct_runtime!(
 		// Include the custom logic from the template pallet in the runtime.
 		TemplateModule: pallet_template::{Module, Call, Storage, Event<T>},
 		Nicks: pallet_nicks::{Module, Call, Storage, Event<T>},
+		Scheduler: pallet_scheduler::{Module, Call, Storage, Event<T>},
 	}
+
+	
 );
+
 
 /// The address format for describing accounts.
 mod multiaddress;
